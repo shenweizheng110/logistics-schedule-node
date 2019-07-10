@@ -1,0 +1,30 @@
+{
+  "name": "logistics-schedule-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "supervisor start.js",
+    "watch-server": "nodemon  --watch './src/**/*' -e  ts,tsx  --exec ts-node  ./start.ts"
+  },
+  "author": "Shenweini",
+  "license": "ISC",
+  "dependencies": {
+    "connect-multiparty": "^2.2.0",
+    "express": "^4.17.1",
+    "file-stream-rotator": "^0.4.1",
+    "morgan": "^1.9.1",
+    "mysql": "^2.17.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.0",
+    "@babel/register": "^7.4.4",
+    "@types/express": "^4.17.0",
+    "@types/morgan": "^1.7.35",
+    "@types/mysql": "^2.15.6",
+    "nodemon": "^1.19.1",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.2"
+  }
+}
