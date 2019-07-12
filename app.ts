@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as bodyParser from 'body-parser';
 import vehicleRouter from './src/router/vehicleRouter';
+import orderRouter from './src/router/orderRouter';
 
 const connectMultiparty = require('connect-multiparty');
 const FileStreamRotator = require('file-stream-rotator');
@@ -43,5 +44,5 @@ app.use(bodyParser.json());
 app.use(connectMultiparty());
 
 app.use('/api/vehicle',vehicleRouter);
-
+app.use('/api/order',orderRouter);
 app.listen(3000);

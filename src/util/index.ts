@@ -39,20 +39,25 @@ const util: any = {
 
     createInsertSql: (tableName: string, columns: string[], info: any): any => {
         let sql:string = '',
-            sqlData: any = [];
-        sql = `insert into ${tableName}(`;
-        columns.map((item: string, index: number) => {
+            sqlData: any = [],
+            flag: boolean = false,
+            endSql: string = sql += ') value(';
+        sql = 'insert into' + ' `' + tableName + '` (';
+        columns.map((item: string) => {
             let humpShape = util.transformHump(item);
-            sqlData.push(info[humpShape]);
-            if(index === 0)
-                sql += item
-            else
-                sql += ',' + item;
+            if(info[humpShape]){
+                sqlData.push(info[humpShape]);
+                if(!flag){
+                    flag = true;
+                    sql += item;
+                    endSql += '?';
+                }else{
+                    sql += ',' + item;
+                    endSql += ',?';
+                }
+            }
         });
-        sql += ') value(?';
-        for(let i = 1; i < columns.length; i++)
-            sql += ',?';
-        sql += ')';
+        sql = `${sql}${endSql})`;
         return {
             sql,
             sqlData
@@ -60,7 +65,7 @@ const util: any = {
     },
 
     createUpdateSql: (tableName: string, columns: [], info: any) => {
-        let sql:string = `update ${tableName} set`,
+        let sql:string = 'update' + ' `' + tableName + '` set',
             sqlData: any = [],
             flag:boolean = false;
         columns.map((item: any, index: number) => {
@@ -87,6 +92,19 @@ const util: any = {
         let date = new Date();
         return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' +
                 date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+    },
+
+    randOrderNumber: () => {
+        let date = new Date(),
+            res = '';
+        res = date.getFullYear().toString() + date.getMonth().toString() + date.getDate().toString() +
+            date.getHours().toString() + date.getMinutes().toString() + date.getSeconds().toString() +
+            date.getMilliseconds().toString();
+        for(let i = 0; i < 3; i++){
+            let rand: number = Math.ceil((Math.random() * 10));
+            res += rand.toString();
+        }
+        return res;
     }
 }
 

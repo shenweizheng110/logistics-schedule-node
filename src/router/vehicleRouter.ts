@@ -2,7 +2,7 @@ import * as express from 'express';
 import vehicleController from '../controller/vehicleController';
 import commonController from '../controller/commonController';
 import result from '../module/result';
-import util from '../util'
+import util from '../util';
 
 const router = express.Router();
 
@@ -46,7 +46,6 @@ router.post('/info',(req: any, res: any) => {
         return res.send(result(1,'vehicleType不为空',vehicleInfo));
     if(!vehicleInfo.status)
         return res.send(result(1,'status不为空',vehicleInfo));
-    vehicleInfo.isDelete = 0;
     vehicleInfo.createTime = util.getDateNow();
     vehicleInfo.updateTime = util.getDateNow();
     vehicleController.addVehicle(vehicleInfo)
@@ -59,7 +58,7 @@ router.post('/info',(req: any, res: any) => {
 })
 
 // 根据 id 标记车辆报废
-router.get('/delete/:id',(req,res,next) => {
+router.delete('/delete/:id',(req,res,next) => {
     let id = req.params.id;
     if(!id)
         return res.send(result(1,'id不为空',null));
@@ -77,6 +76,7 @@ router.put('/info',(req,res,next) => {
     let vehicleInfo = {...req.body};
     if(!vehicleInfo.id)
         return res.send(result(1,'id 不为空',null));
+    vehicleInfo.updateTime = util.getDateNow();
     vehicleController.updateVehicle(vehicleInfo)
         .then((response:any) => {
             res.send(result(0,'修改成功',null));
@@ -91,7 +91,7 @@ router.get('/info/:id',(req,res,next) => {
     let id = req.params.id;
     if(!id)
         return res.send(result(1,'id不为空',null));
-        vehicleController.getVehcile(id)
+    vehicleController.getVehcile(id)
         .then((response: any) => {
             res.send(result(0,'success',response[0]));
         })
