@@ -4,7 +4,7 @@ const util: any = {
     concatSqlByFilterData: (sql:string, filterData: any, columns: string[]): string => {
         columns.map(item => {
             let humpShape = util.transformHump(item);
-            if(filterData[humpShape])
+            if(filterData[humpShape] !== undefined)
                 sql = `${sql} and ${item} = ${pool.escape(filterData[humpShape])}`
         });
         return sql;
@@ -13,7 +13,7 @@ const util: any = {
     concatSqlByLimit: (sql: string, filterData: any, columns: string[]): string => {
         columns.map(item => {
             let humpShape = util.transformHump(item);
-            if(filterData[humpShape]){
+            if(filterData[humpShape] !== undefined){
                 let limit = filterData[humpShape].split('-');
                 sql = `${sql} and ${item} >= ${limit[0]}`;
                 if(limit[1] !== '~')
@@ -45,7 +45,7 @@ const util: any = {
         sql = 'insert into' + ' `' + tableName + '` (';
         columns.map((item: string) => {
             let humpShape = util.transformHump(item);
-            if(info[humpShape]){
+            if(info[humpShape] !== undefined){
                 sqlData.push(info[humpShape]);
                 if(!flag){
                     flag = true;
@@ -70,7 +70,7 @@ const util: any = {
             flag:boolean = false;
         columns.map((item: any, index: number) => {
             let humpShape = util.transformHump(item);
-            if(info[humpShape]){
+            if(info[humpShape] !== undefined){
                 sqlData.push(info[humpShape]);
                 if(!flag){
                     sql = `${sql} ${item} = ?`;

@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as bodyParser from 'body-parser';
 import vehicleRouter from './src/router/vehicleRouter';
 import orderRouter from './src/router/orderRouter';
+import driverRouter from './src/router/driverRouter';
 
 const connectMultiparty = require('connect-multiparty');
 const FileStreamRotator = require('file-stream-rotator');
@@ -41,8 +42,13 @@ app.use(bodyParser.urlencoded({
 // 解析 application/json
 app.use(bodyParser.json());
 
+// 处理文件传输
 app.use(connectMultiparty());
 
+// 分发路由
 app.use('/api/vehicle',vehicleRouter);
 app.use('/api/order',orderRouter);
+app.use('/api/driver',driverRouter);
+
+// 设定端口
 app.listen(3000);

@@ -14,7 +14,7 @@ router.get('/list',(req, res) => {
     if(!pageSize)
         return res.send(result(1,'pageSize不为空',{}));
     Promise.all([
-        commonController.getCountByTable('vehicle'),
+        commonController.getCountByTable('order'),
         orderController.getOrderList({
             page: parseInt(page),
             pageSize: parseInt(pageSize),

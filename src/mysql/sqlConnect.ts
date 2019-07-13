@@ -44,7 +44,7 @@ pool.getCount = (tableName: string) => {
         pool.getConnection(function(err: any, connection: any) {
             if (err)
                 reject(err);
-            connection.query('select count(*) from vehicle', function(error: any, results: any) {
+            connection.query('select count(*) from ?? where is_delete = 0',[tableName], function(error: any, results: any) {
                 if (error)
                     reject(error);
                 resolve(results[0]['count(*)']);

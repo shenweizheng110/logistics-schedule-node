@@ -1,12 +1,12 @@
 import * as express from 'express';
-import vehicleController from '../controller/vehicleController';
+import driverController from '../controller/driverController';
 import commonController from '../controller/commonController';
 import result from '../module/result';
 import util from '../util';
 
 const router = express.Router();
 
-// 分页获取车辆列表
+// 分页获取司机记录
 router.get('/list',(req: any,res: any) => {
     let {page, pageSize, filterData} = req.query;
     if(!page)
@@ -14,8 +14,8 @@ router.get('/list',(req: any,res: any) => {
     if(!pageSize)
         return res.send(result(1,'pageSize不为空',{}));
     Promise.all([
-        commonController.getCountByTable('vehicle'),
-        vehicleController.getVehicleList({
+        commonController.getCountByTable('driver'),
+        driverController.getDriverList({
             page: parseInt(page),
             pageSize: parseInt(pageSize),
             filterData
@@ -31,21 +31,36 @@ router.get('/list',(req: any,res: any) => {
     })
 })
 
-// 添加车辆
-router.post('/info',(req: any, res: any) => {
-    let vehicleInfo = {...req.body};
-    const checkNotNullFields = ['vehicleLicense','maxLoad','maxVolume','maxDayDistance','vehicleType','status'];
+// 根据 id 获取单条记录
+router.get('/info/:id',(req,res) => {
+    let id = req.params.id;
+    if(!id)
+        return res.send(result(1,'id 不为空', null));
+    driverController.getDriverById(id)
+        .then((response: any) => {
+            res.send(result(0,'success',response[0]));
+        })
+        .catch((error: any) => {
+            res.send(result(1,'error',error));
+        })
+})
+
+// 添加司机
+router.post('/info',(req, res) => {
+    let driverInfo: any = {...req.body};
+    const checkNotNullFields = ['name','age','sex','pay','isMedicalHistory','healthStatus'];
     let error: any = [];
     checkNotNullFields.map(item => {
-        if(!vehicleInfo[item]){
+        if(!driverInfo[item]){
             error.push(`${item} 不为空`);
         }
     });
+    driverInfo.isDelete = 0;
+    driverInfo.createTime = util.getDateNow();
+    driverInfo.updateTime = util.getDateNow();
     if(error.length !== 0)
         return res.send(result(1, 'error', error));
-    vehicleInfo.createTime = util.getDateNow();
-    vehicleInfo.updateTime = util.getDateNow();
-    vehicleController.addVehicle(vehicleInfo)
+    driverController.addDriver(driverInfo)
         .then((response: any) => {
             res.send(result(0,'添加成功',null));
         })
@@ -54,43 +69,29 @@ router.post('/info',(req: any, res: any) => {
         })
 })
 
-// 根据 id 标记车辆报废
-router.delete('/delete/:id',(req,res,next) => {
-    let id = req.params.id;
-    if(!id)
-        return res.send(result(1,'id不为空',null));
-    vehicleController.deleteVehicle(id)
+// 修改单条司机数据
+router.put('/info',(req,res) => {
+    let driverInfo = {...req.body};
+    if(!driverInfo.id)
+        return res.send(result(1,'id 不为空',null));
+    driverInfo.updateTime = util.getDateNow();
+    driverController.updateDriver(driverInfo)
         .then((response: any) => {
-            res.send(result(0,'删除成功',null));
+            return res.send(result(0,'修改成功',null));
         })
         .catch((error: any) => {
             res.send(result(1,'error',error));
         })
 })
 
-// 根据 id 修改车辆信息
-router.put('/info',(req,res,next) => {
-    let vehicleInfo = {...req.body};
-    if(!vehicleInfo.id)
-        return res.send(result(1,'id 不为空',null));
-    vehicleInfo.updateTime = util.getDateNow();
-    vehicleController.updateVehicle(vehicleInfo)
-        .then((response:any) => {
-            res.send(result(0,'修改成功',null));
-        })
-        .catch((error:any) => {
-            res.send(result(1,'error',error));
-        })
-})
-
-// 根据 id 获取单个车辆信息
-router.get('/info/:id',(req,res,next) => {
+// 删除单条数据
+router.delete('/info/:id',(req,res) => {
     let id = req.params.id;
     if(!id)
-        return res.send(result(1,'id不为空',null));
-    vehicleController.getVehcile(id)
+        return res.send(result(1,'id 不为空',null));
+    driverController.deleteDriver(id)
         .then((response: any) => {
-            res.send(result(0,'success',response[0]));
+            res.send(result(0,'删除成功',null));
         })
         .catch((error: any) => {
             res.send(result(1,'error',error));
