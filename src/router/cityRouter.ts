@@ -1,12 +1,12 @@
 import * as express from 'express';
-import driverController from '../controller/driverController';
+import cityController from '../controller/cityController';
 import commonController from '../controller/commonController';
 import result from '../module/result';
 import util from '../util';
 
 const router = express.Router();
 
-// 分页获取司机记录
+// 分页获取城市记录
 router.get('/list',(req: any,res: any) => {
     let {page, pageSize, filterData} = req.query;
     if(!page)
@@ -14,8 +14,8 @@ router.get('/list',(req: any,res: any) => {
     if(!pageSize)
         return res.send(result(1,'pageSize不为空',{}));
     Promise.all([
-        commonController.getCountByTable('driver'),
-        driverController.getDriverList({
+        commonController.getCountByTable('city'),
+        cityController.getCityList({
             page: parseInt(page),
             pageSize: parseInt(pageSize),
             filterData
@@ -36,7 +36,7 @@ router.get('/info/:id',(req,res) => {
     let id = req.params.id;
     if(!id)
         return res.send(result(1,'id 不为空', null));
-    driverController.getDriverById(id)
+    cityController.getCityById(id)
         .then((response: any) => {
             res.send(result(0,'success',response[0]));
         })
@@ -45,42 +45,42 @@ router.get('/info/:id',(req,res) => {
         })
 })
 
-// 添加司机
+// 添加城市
 router.post('/info',(req, res) => {
-    let driverInfo: any = {...req.body};
-    const checkNotNullFields = ['name','age','sex','pay','isMedicalHistory','healthStatus'];
+    let cityInfo: any = {...req.body};
+    const checkNotNullFields = ['cityName','longitude','latitude'];
     let error: any = [];
     checkNotNullFields.map(item => {
-        if(!driverInfo[item]){
+        if(!cityInfo[item]){
             error.push(`${item} 不为空`);
         }
     });
-    driverInfo.isDelete = 0;
-    driverInfo.createTime = util.getDateNow();
-    driverInfo.updateTime = util.getDateNow();
+    cityInfo.isDelete = 0;
+    cityInfo.createTime = util.getDateNow();
+    cityInfo.updateTime = util.getDateNow();
     if(error.length !== 0)
         return res.send(result(1, 'error', error));
-    driverController.addDriver(driverInfo)
+    cityController.addCity(cityInfo)
         .then((response: any) => {
             res.send(result(0,'添加成功',null));
         })
         .catch((error: any) => {
-            res.send(result(1,'error',error));
+            res.send(result(1,error,null));
         })
 })
 
-// 修改单条司机数据
+// 修改单条城市数据
 router.put('/info',(req,res) => {
-    let driverInfo = {...req.body};
-    if(!driverInfo.id)
+    let cityInfo = {...req.body};
+    if(!cityInfo.id)
         return res.send(result(1,'id 不为空',null));
-    driverInfo.updateTime = util.getDateNow();
-    driverController.updateDriver(driverInfo)
+        cityInfo.updateTime = util.getDateNow();
+    cityController.updateCity(cityInfo)
         .then((response: any) => {
             return res.send(result(0,'修改成功',null));
         })
         .catch((error: any) => {
-            res.send(result(1,'error',error));
+            res.send(result(1,error,null));
         })
 })
 
@@ -89,12 +89,24 @@ router.delete('/delete/:id',(req,res) => {
     let id = req.params.id;
     if(!id)
         return res.send(result(1,'id 不为空',null));
-    driverController.deleteDriver(id)
+    cityController.deleteCity(id)
         .then((response: any) => {
             res.send(result(0,'删除成功',null));
         })
         .catch((error: any) => {
-            res.send(result(1,'error',error));
+            res.send(result(1,error,null));
+        })
+})
+
+// 获取所有城市
+router.get('/distance',(req,res) => {
+    cityController.getAllCity()
+        .then((response: any) => {
+            // res.send(result(0,'success',response));
+            res.send(result(0,'success',util.getDistance(response)));
+        })
+        .catch((error: any) => {
+            res.send(result(1,error,null));
         })
 })
 

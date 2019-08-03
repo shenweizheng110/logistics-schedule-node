@@ -17,7 +17,7 @@ export default {
                 target_city_id as targetCityId,order_status as orderStatus
             from ${'`order`'} o left join vehicle
             on o.vehicle_id = vehicle.id
-            where is_delete = 0
+            where o.is_delete = 0
         `;
         let columns: string[] = ['number','title','order_status','consignee_name','consignee_phone'];
         sql = util.concatSqlByFilterData(sql,filterData = filterData ? filterData : {},columns);
@@ -66,5 +66,16 @@ export default {
     deleteOrder: (id: number) => {
         let sql = 'update `order` set is_delete = 1 where id = ?';
         return pool.query(sql,[id]);
+    },
+
+    // 获取未处理的订单
+    getUndisposedOrder: () => {
+        let sql = `
+            select id as orderId, number, order_load as orderLoad, order_volume as orderVolume, title,
+            start_city_id as startCityId,target_city_id as targetCityId
+            from order
+            where order_status = undisposed
+        `;
+        return pool.query(sql, null);
     }
 }

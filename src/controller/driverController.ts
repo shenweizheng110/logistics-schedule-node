@@ -15,7 +15,7 @@ export default {
             from driver
             where is_delete = 0
         `;
-        let columns: string[] = ['name','sex','is_medical_history','health_status'];
+        let columns: string[] = ['name','age','sex','is_medical_history','health_status'];
         sql = util.concatSqlByFilterData(sql,filterData = filterData ? filterData : {},columns);
         sql = `${sql} order by create_time desc limit ${pool.escape((page - 1) * pageSize)},${pool.escape(pageSize)}`;
         return pool.query(sql, null);

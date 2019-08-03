@@ -6,6 +6,8 @@ import * as bodyParser from 'body-parser';
 import vehicleRouter from './src/router/vehicleRouter';
 import orderRouter from './src/router/orderRouter';
 import driverRouter from './src/router/driverRouter';
+import cityRouter from './src/router/cityRouter';
+import scheduleRouter from './src/router/scheduleRouter';
 
 const connectMultiparty = require('connect-multiparty');
 const FileStreamRotator = require('file-stream-rotator');
@@ -22,7 +24,7 @@ const accessLogStream = FileStreamRotator.getStream({
 });
 
 // 跨域
-app.all('*', function(req, res, next) {
+app.all('*', function(req: any, res: any, next: any) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'PUT,POST,GET,DELETE,OPTIONS');
@@ -49,6 +51,8 @@ app.use(connectMultiparty());
 app.use('/api/vehicle',vehicleRouter);
 app.use('/api/order',orderRouter);
 app.use('/api/driver',driverRouter);
+app.use('/api/city',cityRouter);
+app.use('/api/schedule',scheduleRouter);
 
 // 设定端口
 app.listen(3000);

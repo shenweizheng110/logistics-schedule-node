@@ -12,7 +12,7 @@ export default {
     getVehicleList: ({page, pageSize, filterData}: listType) => {
         let sql: string = `
             select id,vehicle_license as vehicleLicense,max_load as maxLoad,max_volume as maxVolume,
-                vehicle_type as vehicleType,status,max_day_distance as maxDayDistance
+                vehicle_type as vehicleType,status,max_day_distance as maxDayDistance,base_speed as baseSpeed
             from vehicle
             where status != 'scrap'
         `;
@@ -25,7 +25,7 @@ export default {
 
     // 添加车辆
     addVehicle: (vehicleInfo: any) => {
-        let columns = ['vehicle_license','max_load','max_volume','max_day_distance','vehicle_type','status',
+        let columns = ['vehicle_license','max_load','max_volume','max_day_distance','vehicle_type','status','base_speed',
         'create_time','update_time'];
         let { sql, sqlData } = util.createInsertSql('vehicle',columns,vehicleInfo);
         return pool.query(sql,sqlData);
@@ -39,7 +39,7 @@ export default {
 
     //  更新车辆
     updateVehicle: (vehicleInfo: any) => {
-        let columns = ['vehicle_license','max_load','max_volume','max_day_distance','vehicle_type','status',
+        let columns = ['vehicle_license','max_load','max_volume','max_day_distance','vehicle_type','status','base_speed',
         'update_time'];
         let { sql, sqlData } = util.createUpdateSql('vehicle', columns, vehicleInfo);
         return pool.query(sql,sqlData);
@@ -49,10 +49,10 @@ export default {
     getVehcile: (id: number) => {
         let sql = `
             select id,vehicle_license as vehicleLicense,max_load as maxLoad,max_volume as maxVolume,
-                vehicle_type as vehicleType,status,max_day_distance as maxDayDistance
+                vehicle_type as vehicleType,status,max_day_distance as maxDayDistance,base_speed as baseSpeed
             from vehicle
             where id = ?
         `;
         return pool.query(sql,[id]);
-    }
+    },
 }
