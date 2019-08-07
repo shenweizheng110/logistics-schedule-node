@@ -13,10 +13,14 @@ export default {
         let sql: string = `
             select o.id,number,order_load as orderLoad,order_volume as orderVolume,title,vehicle_license as vehicleLicense,
                 consignee_name as consigneeName,consignee_phone as consigneePhone,
-                consignee_address as consigneeAddress,start_city_id as startCityId,
-                target_city_id as targetCityId,order_status as orderStatus
+                consignee_address as consigneeAddress,start_city_id as startCityId,c1.city_name as startCityName,c2.city_name as
+                targetCityName,target_city_id as targetCityId,order_status as orderStatus,o.create_time as createTime,money
             from ${'`order`'} o left join vehicle
             on o.vehicle_id = vehicle.id
+            left join city c1
+            on o.start_city_id = c1.id
+            left join city c2
+            on o.target_city_id = c2.id
             where o.is_delete = 0
         `;
         let columns: string[] = ['number','title','order_status','consignee_name','consignee_phone'];
@@ -31,7 +35,7 @@ export default {
             select o.id,number,order_load as orderLoad,order_volume as orderVolume,title,vehicle_license as vehicleLicense,
                 consignee_name as consigneeName,consignee_phone as consigneePhone,
                 consignee_address as consigneeAddress,start_city_id as startCityId,
-                target_city_id as targetCityId,order_status as orderStatus
+                target_city_id as targetCityId,order_status as orderStatus,money
             from ${'`order`'} o left join vehicle
             on o.vehicle_id = vehicle.id
             where o.id = ?
@@ -43,7 +47,7 @@ export default {
     addOrder: (orderInfo: any) => {
         let columns = ['number','order_load','order_volume','title','order_status','vehicle_id',
         'consignee_name','consignee_phone','consignee_address','start_city_id',
-        'target_city_id','is_delete','create_time','update_time'];
+        'target_city_id','is_delete','create_time','update_time','money','target_date'];
         let { sql, sqlData } = util.createInsertSql('order',columns,orderInfo);
         return pool.query(sql,sqlData);
     },
@@ -51,7 +55,7 @@ export default {
     // 修改订单
     updateOrder: (orderInfo: any) => {
         let columns = ['load','volume','title','status','consignee_name','consignee_address',
-        'consignee_phone','start_city_id','target_city_id','update_time'];
+        'consignee_phone','start_city_id','target_city_id','update_time','money'];
         let { sql, sqlData } = util.createUpdateSql('order', columns, orderInfo);
         return pool.query(sql,sqlData);
     },

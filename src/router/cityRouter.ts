@@ -98,12 +98,36 @@ router.delete('/delete/:id',(req,res) => {
         })
 })
 
-// 获取所有城市
+// 获取城市距离
 router.get('/distance',(req,res) => {
-    cityController.getAllCity()
+    cityController.getAllCity(req.query.startCityName,req.query.targetCityName)
         .then((response: any) => {
-            // res.send(result(0,'success',response));
             res.send(result(0,'success',util.getDistance(response)));
+        })
+        .catch((error: any) => {
+            res.send(result(1,error,null));
+        })
+})
+
+// 获取所有的城市
+router.get('/all',(req,res) => {
+    cityController.getAllCity(null,null)
+        .then((response: any) => {
+            res.send(result(0,'success',response));
+        })
+        .catch((error: any) => {
+            res.send(result(1,error,null));
+        })
+})
+
+// 检查城市状态
+// 0 表示 可以删 1 表示不可以删
+router.get('/checkCityStatus', (req,res) => {
+    if(!req.query.cityId)
+        return res.send(result(1,'cityId 不为空',null));
+    cityController.checkCityStatus(req.query.cityId)
+        .then((response: any) => {
+            res.send(result(0,'success',response.length > 0 ? 1 : 0));
         })
         .catch((error: any) => {
             res.send(result(1,error,null));

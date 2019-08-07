@@ -88,8 +88,10 @@ const util: any = {
         }
     },
 
-    getDateNow: () => {
+    getDateNow: (day: number = 0) => {
         let date = new Date();
+        if(day !== 0)
+            date.setDate(date.getDate() + day);
         return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' +
                 date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
     },

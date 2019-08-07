@@ -49,7 +49,7 @@ router.get('/info/:id',(req,res) => {
 router.post('/info',(req, res) => {
     let orderInfo: any = {...req.body};
     const checkNotNullFields = ['orderLoad','orderVolume','title','orderStatus','consigneeName','consigneePhone',
-        'consigneeAddress','startCityId','targetCityId'];
+        'consigneeAddress','startCityId','targetCityId','money'];
     let error: any = [];
     checkNotNullFields.map(item => {
         if(!orderInfo[item]){
@@ -60,6 +60,7 @@ router.post('/info',(req, res) => {
     orderInfo.isDelete = 0;
     orderInfo.createTime = util.getDateNow();
     orderInfo.updateTime = util.getDateNow();
+    orderInfo.targetDate = util.getDateNow(3);
     if(error.length !== 0)
         return res.send(result(1, 'error', error));
     orderController.addOrder(orderInfo)

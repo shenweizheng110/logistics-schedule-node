@@ -53,8 +53,33 @@ export default {
     },
 
     // 获取所有的城市 计算距离
-    getAllCity: () => {
-        let sql = 'select id,city_name as cityName,longitude,latitude from city where is_delete = 0';
-        return pool.query(sql,null);
+    getAllCity: (startCityName: string, targetCityName: string) => {
+        if(!startCityName && !targetCityName){
+            let sql = 'select id,city_name as cityName,longitude,latitude from city where is_delete = 0';
+            return pool.query(sql,null);
+        }else{
+            let sql = `
+                select id,city_name as cityName,longitude,latitude
+                from city
+                where is_delete = 0 and (city_name = ? or city_name = ? )
+            `;
+            return pool.query(sql,[startCityName, targetCityName]);
+        }
+    },
+
+    // 检查城市状态
+    checkCityStatus: (cityId: number) => {
+        let sql = `
+        select o.id
+        from city inner join ${'`order`'} o
+        on o.start_city_id = city.id
+        where city.id = ? and (o.order_status = 'undisposed' or o.order_status = 'in_transit') and city.is_delete = 0
+        union
+        select o.id
+        from city inner join ${'`order`'} o
+        on o.target_city_id = city.id
+        where city.id = ? and (o.order_status = 'undisposed' or o.order_status = 'in_transit') and city.is_delete = 0
+        `;
+        return pool.query(sql, [cityId, cityId]);
     }
 }

@@ -18,7 +18,7 @@ router.get('/schedule',(req: any,res: any) => {
     Promise.all([
         scheduleController.getOrderByStatus(),
         scheduleController.getCanScheduleVehicleList(),
-        cityController.getAllCity()
+        cityController.getAllCity(null, null)
     ]).then((response: any) => {
         let orderList = response[0],
             vehicleList = response[1],

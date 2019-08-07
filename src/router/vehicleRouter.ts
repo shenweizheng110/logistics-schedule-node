@@ -3,6 +3,7 @@ import vehicleController from '../controller/vehicleController';
 import commonController from '../controller/commonController';
 import result from '../module/result';
 import util from '../util';
+import { vehicleLoadVolume } from '../config';
 
 const router = express.Router();
 
@@ -34,7 +35,7 @@ router.get('/list',(req: any,res: any) => {
 // 添加车辆
 router.post('/info',(req: any, res: any) => {
     let vehicleInfo = {...req.body};
-    const checkNotNullFields = ['vehicleLicense','maxLoad','maxVolume','maxDayDistance','vehicleType','status'];
+    const checkNotNullFields = ['vehicleLicense','vehicleType','oil','baseSpeed'];
     let error: any = [];
     checkNotNullFields.map(item => {
         if(!vehicleInfo[item]){
@@ -43,6 +44,12 @@ router.post('/info',(req: any, res: any) => {
     });
     if(error.length !== 0)
         return res.send(result(1, 'error', error));
+    vehicleInfo.isDelete = 0;
+    vehicleInfo.status = 'unused';
+    vehicleInfo.maxLoad = vehicleLoadVolume[vehicleInfo.vehicleType].maxLoad;
+    vehicleInfo.maxVolume = vehicleLoadVolume[vehicleInfo.vehicleType].maxVolume;
+    vehicleInfo.currentCityId = 10;
+    vehicleInfo.finishCityId = 10;
     vehicleInfo.createTime = util.getDateNow();
     vehicleInfo.updateTime = util.getDateNow();
     vehicleController.addVehicle(vehicleInfo)
@@ -71,8 +78,17 @@ router.delete('/delete/:id',(req,res,next) => {
 // 根据 id 修改车辆信息
 router.put('/info',(req,res,next) => {
     let vehicleInfo = {...req.body};
-    if(!vehicleInfo.id)
-        return res.send(result(1,'id 不为空',null));
+    const checkNotNullFields = ['id','vehicleLicense','vehicleType','oil','baseSpeed','currentCityId','status'];
+    let error: any = [];
+    checkNotNullFields.map(item => {
+        if(!vehicleInfo[item]){
+            error.push(`${item} 不为空`);
+        }
+    });
+    if(error.length !== 0)
+        return res.send(result(1, 'error', error));
+    vehicleInfo.maxLoad = vehicleLoadVolume[vehicleInfo.vehicleType].maxLoad;
+    vehicleInfo.maxVolume = vehicleLoadVolume[vehicleInfo.vehicleType].maxVolume;
     vehicleInfo.updateTime = util.getDateNow();
     vehicleController.updateVehicle(vehicleInfo)
         .then((response:any) => {
