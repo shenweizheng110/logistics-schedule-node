@@ -108,4 +108,15 @@ router.delete('/delete/:id',(req,res) => {
         })
 })
 
+// 获取所有的为处理的订单
+router.get('/undisposed',(req,res) => {
+    orderController.getUndisposedOrder()
+        .then((response: any) => {
+            res.send(result(0,'获取成功',response));
+        })
+        .catch((error: any) => {
+            res.send(result(1,'error',error));
+        })
+})
+
 export default router;

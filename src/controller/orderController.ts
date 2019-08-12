@@ -75,10 +75,13 @@ export default {
     // 获取未处理的订单
     getUndisposedOrder: () => {
         let sql = `
-            select id as orderId, number, order_load as orderLoad, order_volume as orderVolume, title,
-            start_city_id as startCityId,target_city_id as targetCityId
-            from order
-            where order_status = undisposed
+            select o.id as orderId, number, order_load as orderLoad, order_volume as orderVolume, title,
+            start_city_id as startCityId,target_city_id as targetCityId, c1.city_name as startCityName,c2.city_name as targetCityName
+            from ${'`order`'} o left join city c1
+            on o.start_city_id = c1.id
+            left join city c2
+            on o.target_city_id = c2.id
+            where order_status = 'undisposed'
         `;
         return pool.query(sql, null);
     }

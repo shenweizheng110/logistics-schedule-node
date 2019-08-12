@@ -12,10 +12,14 @@ export default {
     getVehicleList: ({page, pageSize, filterData}: listType) => {
         let sql: string = `
             select vehicle.id as id,vehicle_license as vehicleLicense,max_load as maxLoad,max_volume as maxVolume,
-                vehicle_type as vehicleType,status,oil,base_speed as baseSpeed,city_name as currentCityName
+                vehicle_type as vehicleType,status,oil,base_speed as baseSpeed,city_name as currentCityName,
+                count(order_load) as currentLoad,count(order_volume) as currentVolume,current_city_id as currentCityId
             from vehicle left join city
             on vehicle.current_city_id = city.id
+            left join ${'`order`'} o
+            on vehicle.id = o.vehicle_id
             where status != 'scrap' and vehicle.is_delete = 0
+            group by vehicle.id
         `;
         let columns: string[] = ['vehicle_license','vehicle_type','status'];
         sql = util.concatSqlByFilterData(sql,filterData = filterData ? filterData : {},columns);

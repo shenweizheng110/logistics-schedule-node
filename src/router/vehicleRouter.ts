@@ -48,8 +48,8 @@ router.post('/info',(req: any, res: any) => {
     vehicleInfo.status = 'unused';
     vehicleInfo.maxLoad = vehicleLoadVolume[vehicleInfo.vehicleType].maxLoad;
     vehicleInfo.maxVolume = vehicleLoadVolume[vehicleInfo.vehicleType].maxVolume;
-    vehicleInfo.currentCityId = 10;
-    vehicleInfo.finishCityId = 10;
+    vehicleInfo.currentCityId = 1;
+    vehicleInfo.finishCityId = 1;
     vehicleInfo.createTime = util.getDateNow();
     vehicleInfo.updateTime = util.getDateNow();
     vehicleController.addVehicle(vehicleInfo)

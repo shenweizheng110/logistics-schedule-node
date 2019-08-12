@@ -111,7 +111,7 @@ router.get('/distance',(req,res) => {
 
 // 获取所有的城市
 router.get('/all',(req,res) => {
-    cityController.getAllCity(null,null)
+    cityController.getAllCity()
         .then((response: any) => {
             res.send(result(0,'success',response));
         })
@@ -133,5 +133,17 @@ router.get('/checkCityStatus', (req,res) => {
             res.send(result(1,error,null));
         })
 })
+
+// 批量插入城市点数据
+/* router.get('/insert/all', (req,res) => {
+    cityController.addCityList()
+        .then((response: any) => {
+            res.send(result(0,'success',response));
+        })
+        .catch((error: any) => {
+            console.log(error);
+            res.send(result(1,'error',error));
+        })
+}) */
 
 export default router;

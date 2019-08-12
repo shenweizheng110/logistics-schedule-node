@@ -395,8 +395,6 @@ const calCost = (
                 let targetPathIndex = vehicleItem.shortPath.slice(startPathIndex).indexOf(targetCityId);
                 let needDate = 0;
                 // 等待距离
-                /* console.log(vehicleItem.currentAddressCityId);
-                console.log(citys[vehicleItem.currentAddressCityId]); */
                 let waitDistance = dis[citys[vehicleDetailItem.currentAddressCityId]][citys[startCityId]];
                 // 配送距离
                 let transportDistance = 0;
@@ -413,6 +411,36 @@ const calCost = (
                     combineResItem.timePunish += Math.abs(dispatchDay) * 0.20 * orderItem.money;
                 }
             })
+            // 计算时间表
+            vehicleItem.timeTable = {};
+            let shortPath = vehicleItem.shortPath,
+                preDistance: number = 0,
+                orderIds: any = vehicleItem.orderIds;
+            // 当前位置
+            for(let i = 0; i < shortPath.length; i++){
+                let currentDate = new Date(),
+                    timeTableKey: string = '',
+                    upOrderIds: any = [];
+                currentDate.setMinutes(currentDate.getMinutes() + 1);
+                if(i === 0){
+                    preDistance = 0;
+                }else{
+                    preDistance += dis[citys[shortPath[i - 1]]][citys[shortPath[i]]];
+                    let needTime = Math.ceil(preDistance / vehicleDetailItem.speed);
+                    currentDate.setHours(currentDate.getHours() + needTime);
+                }
+                timeTableKey = `${currentDate.getSeconds()} ${currentDate.getMinutes()} ${currentDate.getHours()} ${currentDate.getDate()} ${currentDate.getMonth() + 1} *`;
+                upOrderIds = [];
+                orderIds.forEach((orderItem: number) => {
+                    if(orderDetail[orderItem].startCityId === shortPath[i]){
+                        upOrderIds.push(orderItem);
+                    }
+                })
+                vehicleItem.timeTable[timeTableKey] = {
+                    cityId: shortPath[i],
+                    upOrderIds,
+                };
+            }
         })
         combineResItem.oilCost = combineResItem.oilWear * 6.37;
         // 油耗 0.5 时间惩罚成本 0.3 人工成本 0.2

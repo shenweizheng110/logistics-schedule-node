@@ -2,8 +2,11 @@
   "compilerOptions": {
       "outDir": "./dist/",
       "module": "commonjs",
-      "noImplicitAny": true,
       "preserveConstEnums": true,
+      "noImplicitAny": true,
+      "noImplicitThis": true,
+      "strictNullChecks": true,
+      "strictFunctionTypes": true,
       "sourceMap": true,
       "target": "es5",
       "allowJs": true

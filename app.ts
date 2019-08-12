@@ -8,10 +8,13 @@ import orderRouter from './src/router/orderRouter';
 import driverRouter from './src/router/driverRouter';
 import cityRouter from './src/router/cityRouter';
 import scheduleRouter from './src/router/scheduleRouter';
+import * as expressWs from 'express-ws';
+import scheduleWs from './src/util/autoSchedule';
+// import scheduleList from './src/util/scheduleCommon';
 
+const appBase = express();
 const connectMultiparty = require('connect-multiparty');
 const FileStreamRotator = require('file-stream-rotator');
-const app = express();
 const logDirectory = path.join(__dirname, 'log');
 
 fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
@@ -22,6 +25,15 @@ const accessLogStream = FileStreamRotator.getStream({
     frequency: 'daliy',
     verbose: false
 });
+
+// 引入 websocket
+let wsInstance = expressWs(appBase);
+
+let { app } = wsInstance;
+
+app.ws('/autoSchedule', (ws: any, req: any) => {
+    scheduleWs(ws);
+})
 
 // 跨域
 app.all('*', function(req: any, res: any, next: any) {
