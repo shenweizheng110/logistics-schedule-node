@@ -113,4 +113,15 @@ router.get('/info/:id',(req,res,next) => {
         })
 })
 
+// 获取所有的车辆
+router.get('/all', (req: any, res: any) => {
+    vehicleController.getVehicleAll()
+        .then((response: any) => {
+            res.send(result(0,'success',response));
+        })
+        .catch((error: any) => {
+            res.send(result(1,'error',error));
+        })
+})
+
 export default router;

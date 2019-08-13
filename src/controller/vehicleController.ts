@@ -60,4 +60,14 @@ export default {
         `;
         return pool.query(sql,[id]);
     },
+
+    // 获取所有车辆
+    getVehicleAll: () => {
+        let sql = `
+            select id, vehicle_license as vehicleLicense
+            from vehicle v
+            where v.is_delete = 0
+        `;
+        return pool.query(sql, null);
+    }
 }

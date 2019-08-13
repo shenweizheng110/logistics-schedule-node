@@ -43,7 +43,7 @@ export default (ws: any) => {
                 speed: vehicleItem.baseSpeed,
                 currentAddressCityId: vehicleItem.currentCityId,
                 finishAddressCityId: vehicleItem.finishCityId,
-                driverCost: 100
+                driverCost: vehicleItem.driverPay
             }
             delete vehicleItem.oil;
             delete vehicleItem.baseSpeed;

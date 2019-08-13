@@ -11,10 +11,10 @@ import {
     combineVehicleOrderOptimizeConsiderHasTask,
     fillOriginOrderForCombine
 } from '../arithmetic'
-import { updateSchedule, scheduleList } from '../util/scheduleCommon';
 
 const router = express.Router();
 
+// 已废弃采用websocket实现  订单自动调度
 router.get('/autoSchedule',(req: any,res: any) => {
     Promise.all([
         scheduleController.getOrderByStatus(),
@@ -38,7 +38,7 @@ router.get('/autoSchedule',(req: any,res: any) => {
                 speed: vehicleItem.baseSpeed,
                 currentAddressCityId: vehicleItem.currentCityId,
                 finishAddressCityId: vehicleItem.finishCityId,
-                driverCost: 100
+                driverCost: vehicleItem.driverPay
             }
             delete vehicleItem.oil;
             delete vehicleItem.baseSpeed;
@@ -82,12 +82,13 @@ router.get('/autoSchedule',(req: any,res: any) => {
         })
         // 车辆与订单的组合
         let combineResult = combineVehicleOrderOptimizeConsiderHasTask(vehicleListCopy, orderList);
-        // 填充已有任务的车辆的当前未完成的订单 和 路线
+        // console.log(combineResult.length);
+        // 填充已有数据
         combineResult = fillOriginOrderForCombine(combineResult, vehicleDetail);
         // 车辆分配路径
         combineResult = allocatPathForVehicle(combineResult, cityIdToIndex, dis, shortPath, vehicleDetail);
         // 计算成本
-        let combineCost = calCost(combineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);
+        let combineCost = calCost(combineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);;
         // 成本最小的方案
         let minCostPlan = minCost(combineCost);
         res.send(result(0,'success',minCostPlan));
@@ -97,6 +98,7 @@ router.get('/autoSchedule',(req: any,res: any) => {
     })
 })
 
+// 获取调度详情
 router.get('/detail', (req: any, res: any) => {
     Promise.all([
         scheduleController.getVehicleUsageRate(),
@@ -136,114 +138,37 @@ router.get('/detail', (req: any, res: any) => {
     })
 })
 
-// 初始化用于调度的车辆、订单、城市点等信息
-router.post('/initScheduleResource', (req: any, res: any) => {
+// 分页获取调度车辆信息
+router.get('/current', (req: any, res: any) => {
+    scheduleController.getCurrentSchedulePlan()
+        .then((response: any) => {
+            res.send(result(0,'success',response));
+        })
+        .catch((error: any) => {
+            console.log(error);
+            res.send(result(1,'error',error));
+        })
+})
+
+// 根据车辆id 获取车辆的调度信息
+router.get('/vehicleSchedule/:id', (req: any, res: any) => {
+    let id = req.params.id;
+    if(!id){
+        return res.send(result(1,'error','id 不为空'));
+    }
     Promise.all([
-        scheduleController.getOrderByStatus(),
-        scheduleController.getCanScheduleVehicleList(),
-        cityController.getAllCity()
+        scheduleController.getVehicleDrivers(id),
+        scheduleController.getVehicleOrders(id),
+        scheduleController.getVehicleRoutes(id)
     ]).then((response: any) => {
-        let orderList = response[0],
-            vehicleList = response[1],
-            cityList = response[2];
-        res.send(result(0,'successs',{
-            orderList,
-            vehicleList,
-            cityList
+        res.send(result(0,'success',{
+            drivers: response[0],
+            orders: response[1],
+            routes: response[2]
         }))
     }).catch((error: any) => {
-        res.send(result(1,'error',error));
+        res.send(result(1, 'error', error));
     })
-})
-
-// 计算车辆与订单的组合
-router.post('/combineVehicleOrder', (req: any, res: any) => {
-    let { vehicleListCopy, orderList } = req.body;
-    if(!vehicleListCopy)
-        return res.send(result(1,'error','vehicleListCopy不为空'));
-    if(!orderList)
-        return res.send(result(1,'error','orderList不为空'));
-    let combineResult = combineVehicleOrderOptimizeConsiderHasTask(JSON.parse(vehicleListCopy), JSON.parse(orderList));
-    res.send(result(0,'success',combineResult));
-})
-
-// 填充已有任务的车辆的当前未完成的订单 和 路线
-router.post('/fillOrginSchedule', (req: any, res: any) => {
-    let { combineResult, vehicleDetail } = req.body;
-    if(!combineResult)
-        return res.send(result(1,'error','combineResult不为空'));
-    if(!vehicleDetail)
-        return res.send(result(1,'error','vehicleDetail不为空'));
-    let combineResultFillOrgin = fillOriginOrderForCombine(
-        JSON.parse(combineResult),
-        JSON.parse(vehicleDetail)
-    );
-    res.send(result(0,'success',combineResultFillOrgin));
-})
-
-// 车辆分配路径
-router.post('/allocatPath', (req: any, res: any) => {
-    let {
-        combineResult,
-        cityIdToIndex,
-        dis,
-        shortPath,
-        vehicleDetail
-    } = req.body;
-    const checkNotNullFields = ['combineResult','cityIdToIndex','dis','shortPath','vehicleDetail'];
-    let error: any = [];
-    checkNotNullFields.map(item => {
-        if(!req.body[item]){
-            error.push(`${item} 不为空`);
-        }
-    });
-    if(error.length !== 0)
-        return res.send(result(1, 'error', error));
-    let allocatRes = allocatPathForVehicle(
-        JSON.parse(combineResult),
-        JSON.parse(cityIdToIndex),
-        JSON.parse(dis),
-        JSON.parse(shortPath),
-        JSON.parse(vehicleDetail)
-    );
-    res.send(result(0,'success',allocatRes));
-})
-
-// 计算成本
-router.post('/calCost', (req: any, res: any) => {
-    let {
-        combineResult,
-        cityIdToIndex,
-        dis,
-        vehicleDetail,
-        orderDetail
-    } = req.body;
-    const checkNotNullFields = ['combineResult','cityIdToIndex','dis','vehicleDetail','orderDetail'];
-    let error: any = [];
-    checkNotNullFields.map(item => {
-        if(!req.body[item]){
-            error.push(`${item} 不为空`);
-        }
-    });
-    if(error.length !== 0)
-        return res.send(result(1, 'error', error));
-    let combineCost = calCost(
-        JSON.parse(combineResult),
-        JSON.parse(vehicleDetail),
-        JSON.parse(dis),
-        JSON.parse(orderDetail),
-        JSON.parse(cityIdToIndex)
-    );
-    res.send(result(0,'success', combineCost));
-})
-
-// 成本最小的方案
-router.post('/getMinCostPlan', (req: any, res: any) => {
-    let { combineCost } = req.body;
-    if(!combineCost)
-        return res.send(result(1,'error','combineCost不为空'));
-    let minCostPlan = minCost(JSON.parse(combineCost));
-    res.send(result(0,'success',minCostPlan));
 })
 
 export default router;

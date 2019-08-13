@@ -10,8 +10,8 @@ import cityRouter from './src/router/cityRouter';
 import scheduleRouter from './src/router/scheduleRouter';
 import * as expressWs from 'express-ws';
 import scheduleWs from './src/util/autoSchedule';
-// import scheduleList from './src/util/scheduleCommon';
 
+// const heapdump = require('heapdump');
 const appBase = express();
 const connectMultiparty = require('connect-multiparty');
 const FileStreamRotator = require('file-stream-rotator');
@@ -25,6 +25,10 @@ const accessLogStream = FileStreamRotator.getStream({
     frequency: 'daliy',
     verbose: false
 });
+
+/* setInterval(() => {
+    heapdump.writeSnapshot('./test' + Date.now() + '.heapsnapshot');
+},1000) */
 
 // 引入 websocket
 let wsInstance = expressWs(appBase);
