@@ -4,6 +4,7 @@ import commonController from '../controller/commonController';
 import result from '../module/result';
 import util from '../util';
 import { vehicleLoadVolume } from '../config';
+import scheduleController from '../controller/scheduleController';
 
 const router = express.Router();
 
@@ -14,6 +15,11 @@ router.get('/list',(req: any,res: any) => {
         return res.send(result(1,'page不为空',{}));
     if(!pageSize)
         return res.send(result(1,'pageSize不为空',{}));
+    let data: any = {
+        total: 0,
+        dataSource: []
+    };
+    let outVehicleIdsJson: any = {}, outVehicleIds: any = [];
     Promise.all([
         commonController.getCountByTable('vehicle'),
         vehicleController.getVehicleList({
@@ -22,11 +28,41 @@ router.get('/list',(req: any,res: any) => {
             filterData
         })
     ]).then(response => {
-        let resParam = {
+        data = {
             total: response[0],
             dataSource: response[1]
-        };
-        res.send(result(0,'success',resParam));
+        }
+        response[1].forEach((vehicleItem: any, vehicleIndex: number) => {
+            if(vehicleItem.status === 'out'){
+                outVehicleIds.push(vehicleItem.id);
+                outVehicleIdsJson[vehicleItem.id] = vehicleIndex;
+            }
+            vehicleItem.originMidwayCitys = [];
+            vehicleItem.originOrderIds = [];
+            vehicleItem.midwayCitys = [];
+        })
+        return Promise.all([
+            scheduleController.getMidwayCity(outVehicleIds),
+            vehicleController.getOrderByVehicleIds(outVehicleIds)
+        ]);
+    }).then((response: any) => {
+        let { dataSource } = data;
+        response[0].forEach((midwayCityItem: any) => {
+            let originMidwayCitys: any = [];
+            originMidwayCitys.push({
+                key: midwayCityItem.startCityId,
+                label: midwayCityItem.startCityName
+            },{
+                key: midwayCityItem.targetCityId,
+                label: midwayCityItem.targetCityName
+            });
+            dataSource[outVehicleIdsJson[midwayCityItem.vehicleId]].originMidwayCitys = originMidwayCitys;
+            dataSource[outVehicleIdsJson[midwayCityItem.vehicleId]].midwayCitys = originMidwayCitys;
+        });
+        response[1].forEach((orderItem: any) => {
+            dataSource[outVehicleIdsJson[orderItem.vehicleId]].originOrderIds.push(orderItem.orderId);
+        })
+        res.send(result(0,'success',data));
     }).catch(error => {
         res.send(result(1,'error',error));
     })

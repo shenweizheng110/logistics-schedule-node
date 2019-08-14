@@ -13,7 +13,8 @@ export default {
         let sql: string = `
             select vehicle.id as id,vehicle_license as vehicleLicense,max_load as maxLoad,max_volume as maxVolume,
                 vehicle_type as vehicleType,status,oil,base_speed as baseSpeed,city_name as currentCityName,
-                count(order_load) as currentLoad,count(order_volume) as currentVolume,current_city_id as currentCityId
+                count(order_load) as currentLoad,count(order_volume) as currentVolume,current_city_id as currentCityId,
+                finish_city_id as finishCityId
             from vehicle left join city
             on vehicle.current_city_id = city.id
             left join ${'`order`'} o
@@ -69,5 +70,15 @@ export default {
             where v.is_delete = 0
         `;
         return pool.query(sql, null);
+    },
+
+    // 批量获取车辆的订单
+    getOrderByVehicleIds: (vehicleIds: any) => {
+        let sql = `
+            select o.id as orderId, vehicle_id as vehicleId
+            from ${'`order`'} o
+            where o.vehicle_id in ?
+        `;
+        return pool.query(sql, [[vehicleIds]]);
     }
 }

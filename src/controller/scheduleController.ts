@@ -7,7 +7,7 @@ type scheduleIntroProps = {
     peopleCost: number,
     punishCost: number,
     scheduleType: 'auto' | 'artificial',
-    schedulePeople?:string,
+    schedulePeople?:number,
     createTime: Date,
     updateTime: Date
 }
@@ -42,14 +42,16 @@ export default {
     },
 
     // 获取当前 未处理
-    getOrderByStatus: () => {
+    getOrderByStatus: (isManual?: boolean) => {
         let sql = `
             select ${'`order`'}.id as orderId,number,order_load as ${"'load'"},order_volume as volume,
             vehicle_id as vehicleId,start_city_id as startCityId,target_city_id as targetCityId,
             money,target_date as targetDate
             from ${'`order`'}
-            where is_delete = 0 and order_status = 'undisposed'
         `;
+        sql = isManual
+            ? `${sql} where is_delete = 0 and (order_status = 'undisposed' or order_status = 'in_transit')`
+            : `${sql} where is_delete = 0 and order_status = 'undisposed'`;
         return pool.query(sql, null);
     },
 
@@ -251,5 +253,19 @@ export default {
         )
         `;
         return pool.query(sql, [vehicleId]);
+    },
+
+    // 根据车辆ID 获取城市点
+    getMidwayCity: (vehicleIds: number[]) => {
+        let sql = `
+            select vehicle_id as vehicleId, c1.id as startCityId, c1.city_name as startCityName, 
+                c2.id as targetCityId, c2.city_name as targetCityName
+            from ${'`order`'} o left join city c1
+            on o.start_city_id = c1.id
+            left join city c2
+            on o.target_city_id = c2.id
+            where o.vehicle_id in ?
+        `;
+        return pool.query(sql, [[vehicleIds]]);
     }
 }

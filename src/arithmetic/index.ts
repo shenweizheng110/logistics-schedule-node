@@ -300,6 +300,25 @@ const fillOriginOrderForCombine = (combineResult: any, vehicleDetail: any) => {
     return combineResult;
 }
 
+// 手动调度根据 shortPath 计算距离
+const calDistanceByShortPath = (
+    combineResult: any,
+    cityIdToIndex: any,
+    dis: any,
+) => {
+    combineResult.map((combineItem: any) => {
+        let minDistance: number = 0,
+            shortPath = combineItem.shortPath;
+        for(let i = 0; i < shortPath.length - 1; i++){
+            let start = cityIdToIndex[shortPath[i]],
+                target = cityIdToIndex[shortPath[i + 1]];
+            minDistance += dis[start][target];
+        };
+        combineItem.minDistance = minDistance;
+    });
+    return combineResult;
+}
+
 // 根据组合为车辆分配最短的路径
 const allocatPathForVehicle = (
     combineResult: any,
@@ -472,5 +491,6 @@ export {
     calCost,
     minCost,
     combineVehicleOrderOptimizeConsiderHasTask,
-    fillOriginOrderForCombine
+    fillOriginOrderForCombine,
+    calDistanceByShortPath
 }

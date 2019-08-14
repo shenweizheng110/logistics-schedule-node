@@ -172,6 +172,7 @@ export default (ws: any) => {
             code: 0,
             msg: '创建定时任务'
         }));
+        // util.createTimeSchedule(minCostPlan);
         let scheduleList: any = [];
         minCostPlan.vehicleOrder.forEach((vehicleItem: any) => {
             Object.keys(vehicleItem.timeTable).forEach((timeKey: string) => {

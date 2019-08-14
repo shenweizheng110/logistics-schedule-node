@@ -1,4 +1,5 @@
 import pool from '../mysql/sqlConnect';
+import { updateSchedule } from './scheduleCommon';
 
 const util: any = {
     concatSqlByFilterData: (sql:string, filterData: any, columns: string[]): string => {
@@ -331,6 +332,23 @@ const util: any = {
         date.setMinutes(0);
         date.setSeconds(0);
         return date;
+    },
+
+    // 创建定时任务
+    createTimeSchedule: (minCostPlan: any) => {
+        let scheduleList: any = [];
+        minCostPlan.vehicleOrder.forEach((vehicleItem: any) => {
+            Object.keys(vehicleItem.timeTable).forEach((timeKey: string) => {
+                let scheduleItem: any = {
+                    vehicleId: vehicleItem.vehicleId,
+                    targetTime: timeKey,
+                    cityId: vehicleItem.timeTable[timeKey].cityId,
+                    upOrderIds: vehicleItem.timeTable[timeKey].upOrderIds,
+                };
+                scheduleList.push(scheduleItem);
+            })
+        })
+        updateSchedule(scheduleList);
     }
 }
 

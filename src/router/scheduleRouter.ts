@@ -9,7 +9,8 @@ import {
     calCost,
     minCost,
     combineVehicleOrderOptimizeConsiderHasTask,
-    fillOriginOrderForCombine
+    fillOriginOrderForCombine,
+    calDistanceByShortPath
 } from '../arithmetic'
 
 const router = express.Router();
@@ -87,11 +88,13 @@ router.get('/autoSchedule',(req: any,res: any) => {
         combineResult = fillOriginOrderForCombine(combineResult, vehicleDetail);
         // 车辆分配路径
         combineResult = allocatPathForVehicle(combineResult, cityIdToIndex, dis, shortPath, vehicleDetail);
+        // console.log(combineResult[0]);
+        res.send(result(0,'success',combineResult));
         // 计算成本
-        let combineCost = calCost(combineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);;
+        let combineCost = calCost(combineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);
         // 成本最小的方案
         let minCostPlan = minCost(combineCost);
-        res.send(result(0,'success',minCostPlan));
+        // res.send(result(0,'success',minCostPlan));
     }).catch((error: any) => {
         console.log(error);
         res.send(result(1,error,error));
@@ -167,6 +170,114 @@ router.get('/vehicleSchedule/:id', (req: any, res: any) => {
             routes: response[2]
         }))
     }).catch((error: any) => {
+        res.send(result(1, 'error', error));
+    })
+})
+
+// 手动调度计算成本
+router.post('/manual/cost', (req: any, res: any) => {
+    let combineResult = JSON.parse(req.body.combineResult);
+    // 过滤路径
+    combineResult.forEach((combineItem: any) => {
+        let shortPath = combineItem.shortPath, filteredPath: any = [];
+        shortPath.forEach((pathItem: number, pathIndex: number) => {
+            if(pathIndex === 0)
+                filteredPath.push(pathItem);
+            else{
+                if(pathItem !== filteredPath[filteredPath.length - 1]){
+                    filteredPath.push(pathItem);
+                }
+            }
+        });
+        combineItem.shortPath = filteredPath;
+    });
+    Promise.all([
+        scheduleController.getOrderByStatus(true),
+        scheduleController.getCanScheduleVehicleList(),
+        cityController.getAllCity()
+    ]).then((response: any) => {
+        let orderList = response[0],
+            vehicleList = response[1],
+            cityList = response[2],
+            vehicleIdToIndex: any = {},
+            orderDetail: any = {},
+            vehicleDetail: any = {},
+            cityIdToIndex: any = {};
+        // 整理车辆列表
+        vehicleList.map((vehicleItem: any, vehicleIndex: number) => {
+            vehicleItem.currentLoad = vehicleItem.currentLoad ? vehicleItem.currentLoad : 0;
+            vehicleItem.currentVolume = vehicleItem.currentVolume ? vehicleItem.currentVolume : 0;
+            vehicleIdToIndex[vehicleItem.id] = vehicleIndex;
+            vehicleDetail[vehicleItem.vehicleId] = {
+                oil: vehicleItem.oil,
+                speed: vehicleItem.baseSpeed,
+                currentAddressCityId: vehicleItem.currentCityId,
+                finishAddressCityId: vehicleItem.finishCityId,
+                driverCost: vehicleItem.driverPay
+            }
+            delete vehicleItem.oil;
+            delete vehicleItem.baseSpeed;
+            delete vehicleItem.currentCityId;
+            delete vehicleItem.finishCityId;
+        });
+        // 整理订单列表
+        orderList.map((orderItem: any) => {
+            if(orderItem.vehicleId){
+                let orderIds = vehicleDetail[orderItem.vehicleId].orderIds ? vehicleDetail[orderItem.vehicleId].orderIds : [],
+                    midwayCityIds = vehicleDetail[orderItem.vehicleId].midwayCityIds ? vehicleDetail[orderItem.vehicleId].midwayCityIds : [];
+                vehicleDetail[orderItem.vehicleId].orderIds = orderIds.concat(orderItem.orderId);
+                vehicleDetail[orderItem.vehicleId].midwayCityIds = midwayCityIds.concat(orderItem.startCityId, orderItem.targetCityId);
+            }
+            orderDetail[orderItem.orderId] = {
+                money: orderItem.money,
+                startCityId: orderItem.startCityId,
+                targetCityId: orderItem.targetCityId,
+                targetDate: orderItem.targetDate
+            }
+            delete orderItem.money;
+            delete orderItem.targetDate;
+        })
+        // 整理城市点信息
+        let {links, nodes} = util.getDistance(cityList);
+        nodes.map((item: any, index: number) => {
+            cityIdToIndex[item.id] = index;
+        })
+        // 路径信息 json 化
+        let linksJson: any = {};
+        links.map((item: any) => {
+            let key = `${item.source}-${item.target}`;
+            linksJson[key] = item.distance;
+        });
+        // 城市点路由表
+        let { dis, shortPath } = shortPathByFloyd(nodes, linksJson);
+        // 计算路径
+        combineResult = calDistanceByShortPath(combineResult,cityIdToIndex,dis);
+        // 计算成本
+        let combineCost = calCost([combineResult], vehicleDetail, dis, orderDetail, cityIdToIndex);
+        res.send(result(0, 'success', combineCost));
+    }).catch((error: any) => {
+        console.log(error);
+        res.send(result(1,'error',error));
+    })
+});
+
+// 确认手动调度
+router.post('/manual', (req: any, res: any) => {
+    let minCostPlan = JSON.parse(req.body.minCostPlan);
+    scheduleController.addSchedule({
+        scheduleTime: new Date(),
+        scheduleType: 'artificial',
+        schedulePeople: 1,
+        oilCost: minCostPlan.oilCost,
+        punishCost: minCostPlan.timePunish,
+        peopleCost: minCostPlan.driverCost,
+        createTime: new Date(),
+        updateTime: new Date()
+    }).then((response: any) => {
+        util.createTimeSchedule(minCostPlan);
+        res.send(result(0,'调度成功',null));
+    }).catch((error: any) => {
+        console.log(error);
         res.send(result(1, 'error', error));
     })
 })
