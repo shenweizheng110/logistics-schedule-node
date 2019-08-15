@@ -44,7 +44,9 @@ pool.getCount = (tableName: string) => {
         pool.getConnection(function(err: any, connection: any) {
             if (err)
                 reject(err);
-            connection.query('select count(*) from ?? where is_delete = 0',[tableName], function(error: any, results: any) {
+            let sql: string = '';
+            sql = tableName === 'log' ? 'select count(*) from ??' : 'select count(*) from ?? where is_delete = 0'
+            connection.query(sql,[tableName], function(error: any, results: any) {
                 if (error)
                     reject(error);
                 resolve(results[0]['count(*)']);

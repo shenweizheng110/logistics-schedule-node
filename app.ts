@@ -8,6 +8,7 @@ import orderRouter from './src/router/orderRouter';
 import driverRouter from './src/router/driverRouter';
 import cityRouter from './src/router/cityRouter';
 import scheduleRouter from './src/router/scheduleRouter';
+import logRouter from './src/router/logRouter';
 import * as expressWs from 'express-ws';
 import scheduleWs from './src/util/autoSchedule';
 
@@ -69,6 +70,7 @@ app.use('/api/order',orderRouter);
 app.use('/api/driver',driverRouter);
 app.use('/api/city',cityRouter);
 app.use('/api/schedule',scheduleRouter);
+app.use('/api/log',logRouter);
 
 // 设定端口
 app.listen(3000);
