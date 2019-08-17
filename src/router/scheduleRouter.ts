@@ -12,6 +12,7 @@ import {
     fillOriginOrderForCombine,
     calDistanceByShortPath
 } from '../arithmetic'
+import client from '../common/redisClient';
 
 const router = express.Router();
 
@@ -83,18 +84,134 @@ router.get('/autoSchedule',(req: any,res: any) => {
         })
         // 车辆与订单的组合
         let combineResult = combineVehicleOrderOptimizeConsiderHasTask(vehicleListCopy, orderList);
-        // console.log(combineResult.length);
+        console.log(combineResult.length);
         // 填充已有数据
         combineResult = fillOriginOrderForCombine(combineResult, vehicleDetail);
         // 车辆分配路径
         combineResult = allocatPathForVehicle(combineResult, cityIdToIndex, dis, shortPath, vehicleDetail);
-        // console.log(combineResult[0]);
-        res.send(result(0,'success',combineResult));
         // 计算成本
         let combineCost = calCost(combineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);
         // 成本最小的方案
         let minCostPlan = minCost(combineCost);
-        // res.send(result(0,'success',minCostPlan));
+        res.send(result(0,'success',minCostPlan));
+    }).catch((error: any) => {
+        console.log(error);
+        res.send(result(1,error,error));
+    })
+})
+
+router.get('/test',(req: any,res: any) => {
+    Promise.all([
+        scheduleController.getOrderByStatus(),
+        scheduleController.getCanScheduleVehicleList(),
+        cityController.getAllCity()
+    ]).then((response: any) => {
+        let orderList = response[0],
+            vehicleList = response[1],
+            cityList = response[2],
+            vehicleIdToIndex: any = {},
+            orderDetail: any = {},
+            vehicleDetail: any = {},
+            cityIdToIndex: any = {};
+        // 整理车辆列表
+        vehicleList.map((vehicleItem: any, vehicleIndex: number) => {
+            vehicleItem.currentLoad = vehicleItem.currentLoad ? vehicleItem.currentLoad : 0;
+            vehicleItem.currentVolume = vehicleItem.currentVolume ? vehicleItem.currentVolume : 0;
+            vehicleIdToIndex[vehicleItem.id] = vehicleIndex;
+            vehicleDetail[vehicleItem.vehicleId] = {
+                oil: vehicleItem.oil,
+                speed: vehicleItem.baseSpeed,
+                currentAddressCityId: vehicleItem.currentCityId,
+                finishAddressCityId: vehicleItem.finishCityId,
+                driverCost: vehicleItem.driverPay
+            }
+            delete vehicleItem.oil;
+            delete vehicleItem.baseSpeed;
+            delete vehicleItem.currentCityId;
+            delete vehicleItem.finishCityId;
+        });
+        // 整理订单列表
+        orderList.map((orderItem: any) => {
+            if(orderItem.vehicleId){
+                let orderIds = vehicleDetail[orderItem.vehicleId].orderIds ? vehicleDetail[orderItem.vehicleId].orderIds : [],
+                    midwayCityIds = vehicleDetail[orderItem.vehicleId].midwayCityIds ? vehicleDetail[orderItem.vehicleId].midwayCityIds : [];
+                vehicleDetail[orderItem.vehicleId].orderIds = orderIds.concat(orderItem.orderId);
+                vehicleDetail[orderItem.vehicleId].midwayCityIds = midwayCityIds.concat(orderItem.startCityId, orderItem.targetCityId);
+            }
+            orderDetail[orderItem.orderId] = {
+                money: orderItem.money,
+                startCityId: orderItem.startCityId,
+                targetCityId: orderItem.targetCityId,
+                targetDate: orderItem.targetDate
+            }
+            delete orderItem.money;
+            delete orderItem.targetDate;
+        })
+        // 整理城市点信息
+        let {links, nodes} = util.getDistance(cityList);
+        nodes.map((item: any, index: number) => {
+            cityIdToIndex[item.id] = index;
+        })
+        // 路径信息 json 化
+        let linksJson: any = {};
+        links.map((item: any) => {
+            let key = `${item.source}-${item.target}`;
+            linksJson[key] = item.distance;
+        });
+        // 城市点路由表
+        let { dis, shortPath } = shortPathByFloyd(nodes, linksJson);
+        // 数据 深拷贝
+        let vehicleListCopy = vehicleList.map((item: any) => {
+            let itemCopy = {...item};
+            return itemCopy;
+        })
+        // 车辆与订单的组合
+        let combineResult = combineVehicleOrderOptimizeConsiderHasTask(vehicleListCopy, orderList);
+        console.log(combineResult.length);
+        // 分批存缓存
+        if(combineResult.length > 1000){
+            let count: number = 0;
+            while(combineResult.length > 1000){
+                let item = combineResult.splice(0,1000);
+                client.setAsync(`combine${count}`,JSON.stringify(item));
+                count++;
+            }
+            client.setAsync(`combine${count}`,JSON.stringify(combineResult));
+            let costPlanList: any = [];
+            new Promise((resolve: any) => {
+                for(let i = 0; i <= count; i++){
+                    new Promise((resolveInner: any, reject: any) => {
+                        client.getAsync(`combine${i}`)
+                            .then((combineItem: any) => {
+                                let childCombineResult = JSON.parse(combineItem);
+                                childCombineResult = fillOriginOrderForCombine(childCombineResult, vehicleDetail);
+                                childCombineResult = allocatPathForVehicle(childCombineResult, cityIdToIndex, dis, shortPath, vehicleDetail);
+                                let combineCost = calCost(childCombineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);
+                                let minCostPlan = minCost(combineCost);
+                                costPlanList.push(minCostPlan);
+                                resolveInner();
+                            })
+                    }).then(() => {
+                        if(i === count){
+                            resolve();
+                        }
+                    })
+                }
+            }).then(() => {
+                let minCostPlan = minCost(costPlanList);
+                res.send(result(0, 'success', minCostPlan));
+            })
+        } else {
+            // 填充已有数据
+            combineResult = fillOriginOrderForCombine(combineResult, vehicleDetail);
+            // 车辆分配路径
+            combineResult = allocatPathForVehicle(combineResult, cityIdToIndex, dis, shortPath, vehicleDetail);
+            // 计算成本
+            let combineCost = calCost(combineResult, vehicleDetail, dis, orderDetail, cityIdToIndex);
+            // 成本最小的方案
+            let minCostPlan = minCost(combineCost);
+            res.send(result(0,'success',minCostPlan));
+        }
     }).catch((error: any) => {
         console.log(error);
         res.send(result(1,error,error));
