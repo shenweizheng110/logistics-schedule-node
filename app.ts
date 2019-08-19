@@ -71,11 +71,11 @@ app.use(session({
 // 路由过滤器 检测路由 检测是否未登录
 app.use((req: any, res: any, next: any) => {
     let filter = /^\/api\/login/;
-    /* if(!filter.test(req.url)){
+    if(!filter.test(req.url)){
         if(!req.session.user_id){
             return res.send(result(2, '未登录', null));
         }
-    } */
+    }
     next();
 })
 
