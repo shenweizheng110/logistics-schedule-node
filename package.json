@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "supervisor start.js",
+    "start": "supervisor start.ts",
     "watch": "nodemon --watch './src/**/*' -e  ts,tsx  --exec ts-node ./start.ts"
   },
   "author": "Shenweini",

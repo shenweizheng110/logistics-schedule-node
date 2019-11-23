@@ -10,6 +10,7 @@ import {
     fillOriginOrderForCombine
 } from '../arithmetic';
 import { updateSchedule } from './scheduleCommon';
+import * as fs from 'fs';
 
 export default (ws: any) => {
     ws.send(JSON.stringify({
@@ -107,6 +108,10 @@ export default (ws: any) => {
         }));
         // 车辆与订单的组合
         let combineResult = combineVehicleOrderOptimizeConsiderHasTask(vehicleListCopy, orderList);
+        // 组合写入文件
+        /* fs.writeFile('combineResult.txt', JSON.stringify(combineResult), (err: any) => {
+            console.log(err);
+        }); */
         ws.send(JSON.stringify({
             code: 0,
             msg: '填充未完成的订单'

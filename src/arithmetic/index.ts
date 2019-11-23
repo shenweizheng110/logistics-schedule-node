@@ -232,6 +232,16 @@ const combineVehicleOrderOptimize = (vehicleList: any, orderList: any): any => {
     return res;
 }
 
+// 车辆与订单的组合 考虑已有任务的车辆的当前载重和体积 redis 优化
+/* export const combineVehicleOrderOptimizeConsiderHasTask2 = (vehicleList: any, orderList: any): any => {
+    if (orderList.length === 0)
+        return [];
+    for (let i = 0; i < orderList.length; i++) {
+
+    }
+} */
+
+
 // 车辆与订单的组合 考虑已有任务的车辆的当前载重和体积
 const combineVehicleOrderOptimizeConsiderHasTask = (vehicleList: any, orderList: any): any => {
     if(orderList.length === 0)
